@@ -20,24 +20,21 @@ const getRandomDateWithinRange = () => {
 
 const makeCommits = (n) => {
   if (n <= 0) return simpleGit().push();
-  
+
   const date = getRandomDateWithinRange().format();
-  const commits = random.int(1, 10); // Randomly select 1 to 10 commits for the day
+  let commits = random.int(1, 5); // 1–5 commits per day for balance
 
   const commitData = () => {
+    if (commits-- <= 0) return makeCommits(--n);
+
     const data = { date };
     jsonfile.writeFile(path, data, () => {
-      simpleGit().add([path]).commit(date, { "--date": date }, () => {
-        if (--commits > 0) {
-          commitData();
-        } else {
-          makeCommits(--n);
-        }
-      });
+      simpleGit().add([path]).commit(date, { "--date": date }, commitData);
     });
   };
 
   commitData();
 };
 
+// Increase total commits to 300–500 for better coverage
 makeCommits(1500);
