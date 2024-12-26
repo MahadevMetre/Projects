@@ -4,37 +4,40 @@ import simpleGit from "simple-git";
 import random from "random";
 
 const path = "./data.json";
+const startDate = moment("2022-06-04", "YYYY-MM-DD");
+const endDate = moment("2024-12-10", "YYYY-MM-DD");
 
-const markCommit = (x, y) => {
-  const date = moment()
-    .subtract(1, "y")
-    .add(1, "d")
-    .add(x, "w")
-    .add(y, "d")
-    .format();
+const isWeekday = (date) => {
+  const day = date.isoWeekday();
+  return day >= 1 && day <= 5; // Monday to Friday
+};
 
-  const data = {
-    date: date,
-  };
-
-  jsonfile.writeFile(path, data, () => {
-    simpleGit().add([path]).commit(date, { "--date": date }).push();
-  });
+const getRandomDateWithinRange = () => {
+  const randomDays = random.int(0, endDate.diff(startDate, "days"));
+  const date = moment(startDate).add(randomDays, "days");
+  return isWeekday(date) ? date : getRandomDateWithinRange();
 };
 
 const makeCommits = (n) => {
-  if(n===0) return simpleGit().push();
-  const x = random.int(0, 54);
-  const y = random.int(0, 6);
-  const date = moment().subtract(1, "y").add(1, "d").add(x, "w").add(y, "d").format();
+  if (n <= 0) return simpleGit().push();
+  
+  const date = getRandomDateWithinRange().format();
+  const commits = random.int(1, 10); // Randomly select 1 to 10 commits for the day
 
-  const data = {
-    date: date,
+  const commitData = () => {
+    const data = { date };
+    jsonfile.writeFile(path, data, () => {
+      simpleGit().add([path]).commit(date, { "--date": date }, () => {
+        if (--commits > 0) {
+          commitData();
+        } else {
+          makeCommits(--n);
+        }
+      });
+    });
   };
-  console.log(date);
-  jsonfile.writeFile(path, data, () => {
-    simpleGit().add([path]).commit(date, { "--date": date },makeCommits.bind(this,--n));
-  });
+
+  commitData();
 };
 
-makeCommits(100);
+makeCommits(1500);
