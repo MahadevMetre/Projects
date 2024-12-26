@@ -18,23 +18,25 @@ const getRandomDateWithinRange = () => {
   return isWeekday(date) ? date : getRandomDateWithinRange();
 };
 
-const makeCommits = (n) => {
-  if (n <= 0) return simpleGit().push();
+const simpleGitInstance = simpleGit();
 
-  const date = getRandomDateWithinRange().format();
-  let commits = random.int(1, 5); // 1–5 commits per day for balance
+const makeCommits = async (n) => {
+  for (let i = 0; i < n; i++) {
+    const date = getRandomDateWithinRange().format();
+    const commits = random.int(1, 5); // 1–5 commits per day
 
-  const commitData = () => {
-    if (commits-- <= 0) return makeCommits(--n);
+    for (let j = 0; j < commits; j++) {
+      const data = { date };
 
-    const data = { date };
-    jsonfile.writeFile(path, data, () => {
-      simpleGit().add([path]).commit(date, { "--date": date }, commitData);
-    });
-  };
+      await jsonfile.writeFile(path, data);
+      await simpleGitInstance.add([path]);
+      await simpleGitInstance.commit(date, { "--date": date });
+    }
+  }
 
-  commitData();
+  await simpleGitInstance.push();
+  console.log(`${n} days of commits pushed successfully!`);
 };
 
-// Increase total commits to 300–500 for better coverage
-makeCommits(1500);
+// Adjust the number of days for balance
+makeCommits(1500).catch((err) => console.error("Error during commits:", err));
