@@ -93,3 +93,82 @@ def arguments(argsval):
 
 if __name__ == "__main__":
     main()
+#!/usr/bin/env python
+import os
+from datetime import datetime, timedelta
+from random import randint, choice
+from subprocess import Popen
+import sys
+
+
+def main():
+    start_date = datetime(2022, 6, 3)
+    end_date = datetime(2025, 1, 7)
+    directory = "moderate-contributions-repo"
+    repository = None  # Add your repository URL here if pushing to remote
+
+    # Create and navigate to the repository directory
+    os.mkdir(directory)
+    os.chdir(directory)
+    run(['git', 'init', '-b', 'main'])
+
+    # Simulate contributions over the date range
+    for day in date_range(start_date, end_date):
+        if should_contribute():  # Randomly decide whether to contribute on this day
+            num_commits = randint(0, 5)  # Randomize contributions per day (0–5)
+            for _ in range(num_commits):
+                commit_time = day + timedelta(hours=randint(8, 20), minutes=randint(0, 59))
+                contribute(commit_time)
+
+    if repository:
+        run(['git', 'remote', 'add', 'origin', repository])
+        run(['git', 'branch', '-M', 'main'])
+        run(['git', 'push', '-u', 'origin', 'main'])
+
+    print('\nRepository generation ' +
+          '\x1b[6;30;42mcompleted successfully\x1b[0m!')
+
+
+def contribute(date):
+    """
+    Make a single commit with a given timestamp.
+    """
+    with open(os.path.join(os.getcwd(), 'README.md'), 'a') as file:
+        file.write(message(date) + '\n\n')
+    run(['git', 'add', '.'])
+    run(['git', 'commit', '-m', f'"{message(date)}"',
+         '--date', date.strftime('"%Y-%m-%d %H:%M:%S"')])
+
+
+def run(commands):
+    """
+    Execute a shell command.
+    """
+    Popen(commands).wait()
+
+
+def message(date):
+    """
+    Generate a commit message based on the timestamp.
+    """
+    return date.strftime('Contribution: %Y-%m-%d %H:%M')
+
+
+def date_range(start_date, end_date):
+    """
+    Generate a range of dates between start_date and end_date.
+    """
+    for n in range((end_date - start_date).days + 1):
+        yield start_date + timedelta(n)
+
+
+def should_contribute():
+    """
+    Randomly decide whether to contribute on a specific day.
+    """
+    # 70% chance to contribute on a given day
+    return choice([True] * 7 + [False] * 3)
+
+
+if __name__ == "__main__":
+    main()
